@@ -15,6 +15,7 @@ provider:
   environment: # global environment variables - accessible to all lambda functions
     TODO_TABLE: Todo-${self:provider.stage}
     IMAGES_S3_BUCKET: serverless-todo-suteri-images-${self:provider.stage}
+    SIGNED_URL_EXPIRATION: 300
 
   iamRoleStatements: # TODO: accessile to all lambda functions - Need to change it later
     - Effect: Allow
@@ -78,6 +79,7 @@ functions:
       - http:
           method: post
           path: todos/{todoId}/attachment
+          cors: true
 
 resources:
   Resources:
