@@ -36,26 +36,6 @@ provider:
     SIGNED_URL_EXPIRATION: 300
     AUTH0_JWKS_URL: https://dev-h7sblwm7.us.auth0.com/.well-known/jwks.json
 
-  iamRoleStatements: # TODO: accessile to all lambda functions - Need to change it later
-    - Effect: Allow
-      Action:
-        - dynamodb:PutItem
-        - dynamodb:Scan
-        - dynamodb:DeleteItem
-        - dynamodb:UpdateItem
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
-    # For allowing access to s3 bucket for lambda functions
-    - Effect: Allow
-      Action:
-        - s3:PutObject # For generating Signed URL, PutObject Permission is REQUIRED
-        - s3:GetObject
-      Resource: arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*
-    # For Querying using Indexing
-    - Effect: Allow
-      Action:
-        - dynamodb:Query
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}/index/${self:provider.environment.TODO_USER_ID_INDEX}
-
 functions:
   Auth:
     handler: src/lambda/auth/auth0Authorizer.handler
@@ -68,6 +48,12 @@ functions:
           path: todos
           cors: true
           authorizer: Auth
+    iamRoleStatements:
+      # For Querying using Indexing
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}/index/${self:provider.environment.TODO_USER_ID_INDEX}
 
   CreateTodo:
     handler: src/lambda/http/createTodo.handler
@@ -83,6 +69,11 @@ functions:
             description: Create a To Do Item
             requestModels:
               'application/json': CreateToDoRequest
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
 
   UpdateTodo:
     handler: src/lambda/http/updateTodo.handler
@@ -98,6 +89,12 @@ functions:
             description: Update a To Do Item
             requestModels:
               'application/json': UpdateToDoRequest
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
 
   DeleteTodo:
     handler: src/lambda/http/deleteTodo.handler
@@ -107,6 +104,12 @@ functions:
           path: todos/{todoId}
           cors: true
           authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:DeleteItem
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
 
   GenerateUploadUrl:
     handler: src/lambda/http/generateUploadUrl.handler
@@ -116,6 +119,12 @@ functions:
           path: todos/{todoId}/attachment
           cors: true
           authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject # For generating Signed URL, PutObject Permission is REQUIRED
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*
 
 resources:
   Resources:
