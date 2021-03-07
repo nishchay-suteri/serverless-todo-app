@@ -16,6 +16,7 @@ provider:
     TODO_TABLE: Todo-${self:provider.stage}
     IMAGES_S3_BUCKET: serverless-todo-suteri-images-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
+    AUTH0_JWKS_URL: https://dev-h7sblwm7.us.auth0.com/.well-known/jwks.json
 
   iamRoleStatements: # TODO: accessile to all lambda functions - Need to change it later
     - Effect: Allow
@@ -45,7 +46,6 @@ functions:
           cors: true
           authorizer: Auth
 
-  # TODO: Configure this function
   CreateTodo:
     handler: src/lambda/http/createTodo.handler
     events:
@@ -55,7 +55,6 @@ functions:
           cors: true
           authorizer: Auth
 
-  # TODO: Configure this function
   UpdateTodo:
     handler: src/lambda/http/updateTodo.handler
     events:
@@ -65,7 +64,6 @@ functions:
           cors: true
           authorizer: Auth
 
-  # TODO: Configure this function
   DeleteTodo:
     handler: src/lambda/http/deleteTodo.handler
     events:
@@ -75,7 +73,6 @@ functions:
           cors: true
           authorizer: Auth
 
-  # TODO: Configure this function
   GenerateUploadUrl:
     handler: src/lambda/http/generateUploadUrl.handler
     events:
