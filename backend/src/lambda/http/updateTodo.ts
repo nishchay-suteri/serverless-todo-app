@@ -18,10 +18,10 @@ export const handler: APIGatewayProxyHandler = async (
 ): Promise<APIGatewayProxyResult> => {
   console.log('Processing Event: ', event)
 
-  // TODO: User Authentication ???
   const todoId = event.pathParameters.todoId
   const updatedTodo: UpdateTodoRequest = JSON.parse(event.body)
 
+  // TODO: Check for invalid todoID ???
   try {
     await docClient
       .update({

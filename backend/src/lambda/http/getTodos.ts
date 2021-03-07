@@ -8,19 +8,33 @@ import {
 
 import * as AWS from 'aws-sdk'
 
+import { parseUserId } from '../../auth/utils'
+
 const docClient = new AWS.DynamoDB.DocumentClient()
 const todoTable = process.env.TODO_TABLE
+
+const todoUserIdIndex = process.env.TODO_USER_ID_INDEX
 
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  // TODO: Get all TODO items for a current user
   console.log('Processing Event: ', event)
+
+  const authorizationHeader = event.headers.Authorization
+  const split = authorizationHeader.split(' ')
+  const jwtToken = split[1]
+
+  const userId = parseUserId(jwtToken)
 
   try {
     const result = await docClient
-      .scan({
-        TableName: todoTable
+      .query({
+        TableName: todoTable,
+        IndexName: todoUserIdIndex,
+        KeyConditionExpression: 'userId = :userId',
+        ExpressionAttributeValues: {
+          ':userId': userId
+        }
       })
       .promise()
 
@@ -37,7 +51,7 @@ export const handler: APIGatewayProxyHandler = async (
       })
     }
   } catch (err) {
-    console.log('GetTodo: Error Occurred when creating ToDo')
+    console.log('GetTodo: Error Occurred when Getting ToDo')
     return {
       statusCode: 404,
       headers: {

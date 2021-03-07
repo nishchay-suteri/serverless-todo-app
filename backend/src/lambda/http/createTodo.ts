@@ -10,6 +10,8 @@ import * as AWS from 'aws-sdk'
 
 import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
 
+import { parseUserId } from '../../auth/utils'
+
 import * as uuid from 'uuid'
 
 const docClient = new AWS.DynamoDB.DocumentClient()
@@ -20,7 +22,11 @@ export const handler: APIGatewayProxyHandler = async (
 ): Promise<APIGatewayProxyResult> => {
   console.log('Processing Event: ', event)
 
-  // TODO: Authenticate user
+  const authorizationHeader = event.headers.Authorization
+  const split = authorizationHeader.split(' ')
+  const jwtToken = split[1]
+
+  const userId = parseUserId(jwtToken)
 
   const newTodo: CreateTodoRequest = JSON.parse(event.body) // name & dueDate
 
@@ -29,12 +35,14 @@ export const handler: APIGatewayProxyHandler = async (
   const createdAt = new Date().toISOString()
 
   const newItem = {
+    userId: userId,
     todoId: todoId,
     createdAt: createdAt,
     ...newTodo,
-    done: false,
-    attachmentUrl: 'SomeURL' // TODO: Update this
+    done: false
   }
+
+  // TODO: attachmentUrl ??
 
   try {
     await docClient

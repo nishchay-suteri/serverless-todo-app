@@ -14,7 +14,6 @@ const todoTable = process.env.TODO_TABLE
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  // TODO: User Authentication and user ID
   console.log('Processing Event: ', event)
   const todoId = event.pathParameters.todoId
 
