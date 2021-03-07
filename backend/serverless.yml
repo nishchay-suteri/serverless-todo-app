@@ -36,7 +36,6 @@ functions:
   Auth:
     handler: src/lambda/auth/auth0Authorizer.handler
 
-  # TODO: Configure this function
   GetTodos:
     handler: src/lambda/http/getTodos.handler
     events:
@@ -44,6 +43,7 @@ functions:
           method: get
           path: todos
           cors: true
+          authorizer: Auth
 
   # TODO: Configure this function
   CreateTodo:
@@ -53,6 +53,7 @@ functions:
           method: post
           path: todos
           cors: true
+          authorizer: Auth
 
   # TODO: Configure this function
   UpdateTodo:
@@ -62,6 +63,7 @@ functions:
           method: patch
           path: todos/{todoId}
           cors: true
+          authorizer: Auth
 
   # TODO: Configure this function
   DeleteTodo:
@@ -71,6 +73,7 @@ functions:
           method: delete
           path: todos/{todoId}
           cors: true
+          authorizer: Auth
 
   # TODO: Configure this function
   GenerateUploadUrl:
@@ -80,6 +83,7 @@ functions:
           method: post
           path: todos/{todoId}/attachment
           cors: true
+          authorizer: Auth
 
 resources:
   Resources:
@@ -112,6 +116,7 @@ resources:
                 - DELETE
                 - HEAD
               MaxAge: 3000
+
     # For allowing all to access the s3 bucket resources..(From normal http request.. Not for Lambda functions)
     BucketPolicy:
       Type: AWS::S3::BucketPolicy
@@ -126,3 +131,15 @@ resources:
               Action: 's3:GetObject'
               Resource: 'arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*'
         Bucket: !Ref ImagesBucket
+
+    # When request is denied from authorizer, gateway doesn't set proper cors headers to response. We need to add following resource for doing this
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
