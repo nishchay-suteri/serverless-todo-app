@@ -1,3 +1,4 @@
+// For Refactoring to Business Logiic - Ports- Adapters Architecture
 export interface TodoItem {
   userId: string
   todoId: string

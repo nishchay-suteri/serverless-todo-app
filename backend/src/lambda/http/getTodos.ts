@@ -6,39 +6,18 @@ import {
   APIGatewayProxyHandler
 } from 'aws-lambda'
 
-import * as AWS from 'aws-sdk'
-
-import { parseUserId } from '../../auth/utils'
-
-const docClient = new AWS.DynamoDB.DocumentClient()
-const todoTable = process.env.TODO_TABLE
-
-const todoUserIdIndex = process.env.TODO_USER_ID_INDEX
+import { getTodos } from '../../businessLogic/todo'
+import { getJwtToken } from '../utils'
 
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   console.log('Processing Event: ', event)
 
-  const authorizationHeader = event.headers.Authorization
-  const split = authorizationHeader.split(' ')
-  const jwtToken = split[1]
-
-  const userId = parseUserId(jwtToken)
+  const jwtToken = getJwtToken(event)
 
   try {
-    const result = await docClient
-      .query({
-        TableName: todoTable,
-        IndexName: todoUserIdIndex,
-        KeyConditionExpression: 'userId = :userId',
-        ExpressionAttributeValues: {
-          ':userId': userId
-        }
-      })
-      .promise()
-
-    const items = result.Items
+    const items = await getTodos(jwtToken)
 
     return {
       statusCode: 200,

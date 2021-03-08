@@ -6,10 +6,7 @@ import {
   APIGatewayProxyHandler
 } from 'aws-lambda'
 
-import * as AWS from 'aws-sdk'
-
-const docClient = new AWS.DynamoDB.DocumentClient()
-const todoTable = process.env.TODO_TABLE
+import { deleteTodo } from '../../businessLogic/todo'
 
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
@@ -17,13 +14,8 @@ export const handler: APIGatewayProxyHandler = async (
   console.log('Processing Event: ', event)
   const todoId = event.pathParameters.todoId
 
-  const key = {
-    todoId: todoId
-  }
-
-  // TODO: Check for invalid todoID ???
   try {
-    await docClient.delete({ TableName: todoTable, Key: key }).promise()
+    await deleteTodo(todoId)
     return {
       statusCode: 200,
       headers: {

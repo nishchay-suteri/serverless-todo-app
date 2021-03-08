@@ -1,56 +1,24 @@
 import 'source-map-support/register'
-
 import {
   APIGatewayProxyEvent,
   APIGatewayProxyHandler,
   APIGatewayProxyResult
 } from 'aws-lambda'
-
-import * as AWS from 'aws-sdk'
-
 import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
-
-import { parseUserId } from '../../auth/utils'
-
-import * as uuid from 'uuid'
-
-const docClient = new AWS.DynamoDB.DocumentClient()
-const todoTable = process.env.TODO_TABLE
+import { getJwtToken } from '../utils'
+import { createTodo } from '../../businessLogic/todo'
 
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   console.log('Processing Event: ', event)
 
-  const authorizationHeader = event.headers.Authorization
-  const split = authorizationHeader.split(' ')
-  const jwtToken = split[1]
-
-  const userId = parseUserId(jwtToken)
+  const jwtToken = getJwtToken(event)
 
   const newTodo: CreateTodoRequest = JSON.parse(event.body) // name & dueDate
 
-  const todoId = uuid.v4()
-
-  const createdAt = new Date().toISOString()
-
-  const newItem = {
-    userId: userId,
-    todoId: todoId,
-    createdAt: createdAt,
-    ...newTodo,
-    done: false
-  }
-
-  // TODO: attachmentUrl ??
-
   try {
-    await docClient
-      .put({
-        TableName: todoTable,
-        Item: newItem
-      })
-      .promise()
+    const newItem = await createTodo(newTodo, jwtToken)
     return {
       statusCode: 201,
       headers: {
@@ -74,14 +42,4 @@ export const handler: APIGatewayProxyHandler = async (
       })
     }
   }
-  /*
-  "item": {
-    "todoId": "123",
-    "createdAt": "2019-07-27T20:01:45.424Z",
-    "name": "Buy milk",
-    "dueDate": "2019-07-29T20:01:45.424Z",
-    "done": false,
-    "attachmentUrl": "http://example.com/image.png"
-  }
-  */
 }
