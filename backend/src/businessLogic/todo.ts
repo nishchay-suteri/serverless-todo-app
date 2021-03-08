@@ -34,7 +34,8 @@ export async function createTodo(
     todoId: todoId,
     createdAt: createdAt,
     ...createToDoRequest,
-    done: false
+    done: false,
+    attachmentUrl: ''
   }
 
   return await todoAccess.createTodo(newItem)
@@ -66,4 +67,9 @@ export async function deleteTodo(todoId: string) {
     throw new Error(`Item to delete with id ${todoId} Doesn't exist`)
   }
   return await todoAccess.deleteToDo(todoId)
+}
+
+export async function updateImageUrl(bucketName: string, todoId: string) {
+  const url: string = `https://${bucketName}.s3.amazonaws.com/${todoId}`
+  await todoAccess.updateImageUrl(todoId, url)
 }

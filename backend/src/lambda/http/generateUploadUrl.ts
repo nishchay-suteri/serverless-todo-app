@@ -14,16 +14,34 @@ const urlExpiration = process.env.SIGNED_URL_EXPIRATION
 import * as middy from 'middy'
 import { cors } from 'middy/middlewares'
 
+import { createLogger } from '../../utils/logger'
+
+const logger = createLogger('http')
+
+import { updateImageUrl } from '../../businessLogic/todo'
+
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     const todoId = event.pathParameters.todoId
 
     const url = getUploadURL(todoId)
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        uploadUrl: url
-      })
+    try {
+      await updateImageUrl(bucketName, todoId)
+      logger.info(`generateUploadUrl: URL Update Success`)
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          uploadUrl: url
+        })
+      }
+    } catch (err) {
+      logger.error('generateUploadUrl: URL Update Failure')
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          error: err
+        })
+      }
     }
   }
 )

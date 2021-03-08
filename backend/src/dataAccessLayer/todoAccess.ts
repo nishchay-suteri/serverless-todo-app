@@ -90,4 +90,24 @@ export class TodoAccess {
       })
       .promise()
   }
+
+  async updateImageUrl(todoId: string, url: string) {
+    logger.info(`Updating image URL: ${url} with todo Id: ${todoId}`)
+    await this.docClient
+      .update({
+        TableName: this.todoTable,
+        Key: {
+          todoId: todoId
+        },
+        UpdateExpression: 'set #attachmentURLField = :name',
+        ExpressionAttributeNames: {
+          '#attachmentURLField': 'attachmentUrl'
+        },
+        ExpressionAttributeValues: {
+          ':name': url
+        },
+        ReturnValues: 'NONE'
+      })
+      .promise()
+  }
 }
