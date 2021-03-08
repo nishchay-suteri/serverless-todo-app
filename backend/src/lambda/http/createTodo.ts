@@ -1,87 +1,46 @@
 import 'source-map-support/register'
-
-import {
-  APIGatewayProxyEvent,
-  APIGatewayProxyHandler,
-  APIGatewayProxyResult
-} from 'aws-lambda'
-
-import * as AWS from 'aws-sdk'
-
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
+import { getJwtToken } from '../utils'
+import { createTodo } from '../../businessLogic/todo'
 
-import { parseUserId } from '../../auth/utils'
+import * as middy from 'middy'
+import { cors } from 'middy/middlewares'
 
-import * as uuid from 'uuid'
+import { createLogger } from '../../utils/logger'
 
-const docClient = new AWS.DynamoDB.DocumentClient()
-const todoTable = process.env.TODO_TABLE
+const logger = createLogger('http')
 
-export const handler: APIGatewayProxyHandler = async (
-  event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
-  console.log('Processing Event: ', event)
+export const handler = middy(
+  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    logger.info('Processing Event: ', event)
+    const jwtToken = getJwtToken(event)
 
-  const authorizationHeader = event.headers.Authorization
-  const split = authorizationHeader.split(' ')
-  const jwtToken = split[1]
+    const newTodo: CreateTodoRequest = JSON.parse(event.body) // name & dueDate
 
-  const userId = parseUserId(jwtToken)
-
-  const newTodo: CreateTodoRequest = JSON.parse(event.body) // name & dueDate
-
-  const todoId = uuid.v4()
-
-  const createdAt = new Date().toISOString()
-
-  const newItem = {
-    userId: userId,
-    todoId: todoId,
-    createdAt: createdAt,
-    ...newTodo,
-    done: false
-  }
-
-  // TODO: attachmentUrl ??
-
-  try {
-    await docClient
-      .put({
-        TableName: todoTable,
-        Item: newItem
-      })
-      .promise()
-    return {
-      statusCode: 201,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': true
-      },
-      body: JSON.stringify({
-        item: newItem
-      })
-    }
-  } catch (err) {
-    console.log('CreateTodo: Error Occurred when creating ToDo')
-    return {
-      statusCode: 404,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': true
-      },
-      body: JSON.stringify({
-        error: err
-      })
+    try {
+      const newItem = await createTodo(newTodo, jwtToken)
+      logger.info('CreateTodo: Success')
+      return {
+        statusCode: 201,
+        body: JSON.stringify({
+          item: newItem
+        })
+      }
+    } catch (err) {
+      logger.error('CreateTodo: Failure')
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          error: err
+        })
+      }
     }
   }
-  /*
-  "item": {
-    "todoId": "123",
-    "createdAt": "2019-07-27T20:01:45.424Z",
-    "name": "Buy milk",
-    "dueDate": "2019-07-29T20:01:45.424Z",
-    "done": false,
-    "attachmentUrl": "http://example.com/image.png"
-  }
-  */
-}
+)
+
+handler.use(
+  cors({
+    credentials: true
+  })
+)

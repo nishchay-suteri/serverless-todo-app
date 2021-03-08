@@ -1,66 +1,46 @@
 import 'source-map-support/register'
 
-import {
-  APIGatewayProxyEvent,
-  APIGatewayProxyResult,
-  APIGatewayProxyHandler
-} from 'aws-lambda'
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
-import * as AWS from 'aws-sdk'
+import { getTodos } from '../../businessLogic/todo'
+import { getJwtToken } from '../utils'
 
-import { parseUserId } from '../../auth/utils'
+import * as middy from 'middy'
+import { cors } from 'middy/middlewares'
 
-const docClient = new AWS.DynamoDB.DocumentClient()
-const todoTable = process.env.TODO_TABLE
+import { createLogger } from '../../utils/logger'
 
-const todoUserIdIndex = process.env.TODO_USER_ID_INDEX
+const logger = createLogger('http')
 
-export const handler: APIGatewayProxyHandler = async (
-  event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
-  console.log('Processing Event: ', event)
+export const handler = middy(
+  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    logger.info('Processing Event: ', event)
 
-  const authorizationHeader = event.headers.Authorization
-  const split = authorizationHeader.split(' ')
-  const jwtToken = split[1]
+    const jwtToken = getJwtToken(event)
 
-  const userId = parseUserId(jwtToken)
-
-  try {
-    const result = await docClient
-      .query({
-        TableName: todoTable,
-        IndexName: todoUserIdIndex,
-        KeyConditionExpression: 'userId = :userId',
-        ExpressionAttributeValues: {
-          ':userId': userId
-        }
-      })
-      .promise()
-
-    const items = result.Items
-
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': true
-      },
-      body: JSON.stringify({
-        items
-      })
-    }
-  } catch (err) {
-    console.log('GetTodo: Error Occurred when Getting ToDo')
-    return {
-      statusCode: 404,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': true
-      },
-      body: JSON.stringify({
-        error: err
-      })
+    try {
+      const items = await getTodos(jwtToken)
+      logger.info('getTodo: Success')
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          items
+        })
+      }
+    } catch (err) {
+      logger.error('getTodo: Failure')
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          error: err
+        })
+      }
     }
   }
-}
+)
+
+handler.use(
+  cors({
+    credentials: true
+  })
+)
