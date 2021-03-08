@@ -7,16 +7,20 @@ import { createTodo } from '../../businessLogic/todo'
 import * as middy from 'middy'
 import { cors } from 'middy/middlewares'
 
+import { createLogger } from '../../utils/logger'
+
+const logger = createLogger('http')
+
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    console.log('Processing Event: ', event)
-
+    logger.info('Processing Event: ', event)
     const jwtToken = getJwtToken(event)
 
     const newTodo: CreateTodoRequest = JSON.parse(event.body) // name & dueDate
 
     try {
       const newItem = await createTodo(newTodo, jwtToken)
+      logger.info('CreateTodo: Success')
       return {
         statusCode: 201,
         body: JSON.stringify({
@@ -24,7 +28,7 @@ export const handler = middy(
         })
       }
     } catch (err) {
-      console.log('CreateTodo: Error Occurred when creating ToDo')
+      logger.error('CreateTodo: Failure')
       return {
         statusCode: 404,
         body: JSON.stringify({

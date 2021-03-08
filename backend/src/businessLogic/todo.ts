@@ -9,6 +9,10 @@ import * as uuid from 'uuid'
 
 const todoAccess = new TodoAccess()
 
+import { createLogger } from '../utils/logger'
+
+const logger = createLogger('businessLogic')
+
 export async function getTodos(jwtToken: string): Promise<TodoItem[]> {
   const userId: string = parseUserId(jwtToken)
   return await todoAccess.getTodos(userId)
@@ -43,7 +47,7 @@ export async function updateTodo(
   const validTodoId: Boolean = await todoAccess.getTodoById(todoId)
 
   if (!validTodoId) {
-    console.log(`Item to update with id ${todoId} Doesn't exist`)
+    logger.error(`Item to update with id ${todoId} Doesn't exist`)
     throw new Error(`Item to update with id ${todoId} Doesn't exist`)
   }
   const updatedToDo: TodoUpdate = {
@@ -58,7 +62,7 @@ export async function deleteTodo(todoId: string) {
   const validTodoId = await todoAccess.getTodoById(todoId)
 
   if (!validTodoId) {
-    console.log(`Item to delete with id ${todoId} Doesn't exist`)
+    logger.error(`Item to delete with id ${todoId} Doesn't exist`)
     throw new Error(`Item to delete with id ${todoId} Doesn't exist`)
   }
   return await todoAccess.deleteToDo(todoId)

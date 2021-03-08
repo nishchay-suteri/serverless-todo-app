@@ -3,6 +3,10 @@ import * as AWS from 'aws-sdk'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate'
 
+import { createLogger } from '../utils/logger'
+
+const logger = createLogger('dataLayer')
+
 export class TodoAccess {
   constructor(
     private readonly docClient: DocumentClient = new AWS.DynamoDB.DocumentClient(),
@@ -11,7 +15,7 @@ export class TodoAccess {
   ) {}
 
   async createTodo(newItem: TodoItem): Promise<TodoItem> {
-    console.log('Creating ToDo Item ')
+    logger.info('Creating ToDo Item ')
 
     await this.docClient
       .put({
@@ -24,7 +28,7 @@ export class TodoAccess {
   }
 
   async getTodoById(todoId: string): Promise<Boolean> {
-    console.log(`Getting ToDo by ID ${todoId}`)
+    logger.info(`Getting ToDo by ID ${todoId}`)
 
     const result = await this.docClient
       .get({
@@ -39,7 +43,7 @@ export class TodoAccess {
   }
 
   async getTodos(userId: string): Promise<TodoItem[]> {
-    console.log(`Getting ToDos`)
+    logger.info(`Getting ToDos for userId ${userId}`)
     const result = await this.docClient
       .query({
         TableName: this.todoTable,
@@ -55,7 +59,7 @@ export class TodoAccess {
   }
 
   async deleteToDo(todoId: string) {
-    console.log(`Deleting ToDo`)
+    logger.info(`Deleting ToDo with toDo ID ${todoId}`)
     const key = {
       todoId: todoId
     }
@@ -65,7 +69,7 @@ export class TodoAccess {
   }
 
   async updateToDo(todoId: string, updatedTodo: TodoUpdate) {
-    console.log(`Updating ToDo`)
+    logger.info(`Updating ToDo with todo Id: ${todoId}`)
     await this.docClient
       .update({
         TableName: this.todoTable,

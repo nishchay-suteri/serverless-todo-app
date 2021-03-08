@@ -8,15 +8,19 @@ import { getJwtToken } from '../utils'
 import * as middy from 'middy'
 import { cors } from 'middy/middlewares'
 
+import { createLogger } from '../../utils/logger'
+
+const logger = createLogger('http')
+
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    console.log('Processing Event: ', event)
+    logger.info('Processing Event: ', event)
 
     const jwtToken = getJwtToken(event)
 
     try {
       const items = await getTodos(jwtToken)
-
+      logger.info('getTodo: Success')
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -24,7 +28,7 @@ export const handler = middy(
         })
       }
     } catch (err) {
-      console.log('GetTodo: Error Occurred when Getting ToDo')
+      logger.error('getTodo: Failure')
       return {
         statusCode: 404,
         body: JSON.stringify({

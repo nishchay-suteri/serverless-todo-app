@@ -18,8 +18,6 @@ export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     const todoId = event.pathParameters.todoId
 
-    // TODO: Check if todo Item exists
-
     const url = getUploadURL(todoId)
     return {
       statusCode: 200,
